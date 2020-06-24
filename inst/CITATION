@@ -1,0 +1,14 @@
+citHeader("To cite EZtune in publications use:")
+
+citEntry(entry = "Article",
+         title        = "There has to be an easier way: a simple alternative for parameter tuning of supervised learning methods",
+         author       = personList(as.person("Jill F Lundell")),
+         journal      = "JSM Proceedings, Statistical Computing Section. Alexandria, VA: American Statistical Association",
+         year         = "2017",
+         pages        = "3028--3036",
+
+         textVersion  =
+           paste("Jill Lundell (2017).",
+                 "There has to be an easier way: a simple alternative for parameter tuning of supervised learning methods.",
+                 "JSM Proceedings, Statistical Computing Section. Alexandria, VA: American Statistical Association, 3028--3036.")
+)
