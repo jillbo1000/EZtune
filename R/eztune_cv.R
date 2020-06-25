@@ -58,8 +58,8 @@ eztune_cv <- function(x, y, model, cross = 10) {
 
   res <- switch(type,
                 ada.bin.cv = ada.bin.cv(x, y, model, cross = cross),
-                en.bin.cv = svm.bin.cv(x, y, model, cross = cross),
-                en.reg.cv = svm.reg.cv(x, y, model, cross = cross),
+                en.bin.cv = en.bin.cv(x, y, model, cross = cross),
+                en.reg.cv = en.reg.cv(x, y, model, cross = cross),
                 gbm.bin.cv = gbm.bin.cv(x, y, model, cross = cross),
                 gbm.reg.cv = gbm.reg.cv(x, y, model, cross = cross),
                 svm.bin.cv = svm.bin.cv(x, y, model, cross = cross),
