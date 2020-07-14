@@ -5,6 +5,8 @@
 
 svm.bin.ga <- function(x = x, y = y, cross = NULL, fast = FALSE, loss = loss) {
 
+  x <- matrix(dummy(x))
+
   dat <- as.data.frame(cbind(y, x))
 
   #------------------------------------------------------------------------------
