@@ -7,8 +7,6 @@ utils::globalVariables(c("dat"))
 
 svm.reg.ga <- function(x = x, y = y, cross = cross, fast = fast, loss = loss) {
 
-  x <- as.matrix(dummy(x))
-
   dat <- as.data.frame(cbind(y, x))
 
   # initialize list

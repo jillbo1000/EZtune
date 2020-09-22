@@ -5,8 +5,6 @@
 
 svm.bin.hjn <- function(x = x, y = y, cross = NULL, fast = FALSE, loss = loss) {
 
-  x <- as.matrix(dummy(x))
-
   dat <- as.data.frame(cbind(y, x))
 
   # initialize list
