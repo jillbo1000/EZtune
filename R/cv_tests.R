@@ -46,7 +46,7 @@ en.bin.cv <- function(x, y, model, cross = 10) {
     t1 <- rbind(test.x, train.x)
     en.t <- glmnet::glmnet(train.x, train.y, family = "binomial",
                            alpha = model$alpha, lambda = model$lambda)
-    yval[xvs == i] <- as.numeric(stats::predict(en.t, newx = t1.x,
+    yval[xvs == i] <- as.numeric(stats::predict(en.t, newx = t1,
                                                 type = "class"))[1:nrow(test.x)]
   }
 
