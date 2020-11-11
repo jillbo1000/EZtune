@@ -50,7 +50,7 @@ cv.pred.svm <- function(dat, params, cross) {
     svm.t <- e1071::svm(as.factor(y) ~ ., data = train, cost = params[1],
                         gamma = 2^params[2], probability = TRUE)
     pr <- stats::predict(svm.t, newdata = test[, -1], probability = TRUE)
-    yval[xvs == i] <- attr(pr, "probabilities")[, 1]
+    yval[xvs == i] <- attr(pr, "probabilities")[, colnames(attr(pr, "probabilities")) == "1"]
   }
   yval
 }

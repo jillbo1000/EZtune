@@ -45,7 +45,7 @@ svm.bin.ga <- function(x = x, y = y, cross = NULL, fast = FALSE, loss = loss) {
     svm.t <- e1071::svm(as.factor(y) ~ ., data = train, cost = cost,
                         gamma = gamma, probability = TRUE)
     pr <- stats::predict(svm.t, newdata = test, probability = TRUE)
-    pred <- attr(pr, "probabilities")[, 1]
+    pred <- attr(pr, "probabilities")[, colnames(attr(pr, "probabilities")) == "1"]
     data.frame(cbind(pred, y = test$y))
   }
 

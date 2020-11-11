@@ -1,8 +1,10 @@
 ---
-title: "my-vignette"
+title: "EZtune"
+author: "Jill F. Lundell"
+date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{my-vignette}
+  %\VignetteIndexEntry{EZtune}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -17,3 +19,229 @@ knitr::opts_chunk$set(
 ```{r setup}
 library(EZtune)
 ```
+
+<br/><br/>
+
+# Introduction to EZtune
+EZtune is an R package that can automatically tune support vector machines (SVMs), elastic net (EN), gradient boosting machines (GBMs), and adaboost. The idea for the package came from frustration with trying to tune supervised learning models and finding that available tools are slow and difficult to use, have limited capability, or are not reliably maintained. EZtune was developed to be easy to use off the shelf while providing the user with well tuned models within a reasonable computation time. The primary function in EZtune searches through the hyperparameter space for a model type using either a Hooke-Jeeves or genetic algorithm. Models with a binary or continuous response can be tuned. 
+
+EZtune was developed using research that explored effective hyperparameter spaces for SVM, EN, GBM, and adaboost for data with a continuous response variable or with a binary response variable. Many optimization algorithms were tested to identify ones that were able to find an optimal model with reasonable computation time. The Hooke-Jeeves optimization algorithm out-performed all of the other algorithms in terms of model accuracy and computation time. A genetic algorithm sometimes found a better model than the Hooke-Jeeves optimization algorithm, but the computation time is notably longer. Thus, the genetic algorithm is included as an option, but it is not the default. 
+
+The package includes two functions and four datasets. The functions are eztune and eztune_cv. The datasets are lichen, lichenTest, mullein, and mulleinTest.
+
+<br/><br/>
+
+# Functions: eztune and eztune_cv
+
+The eztune function is used to find an optimal model given the data. eztune_cv provides a cross validated accuracy and area under the ROC curve (AUC), or mean squared error (MSE) and mean absolute error (MAE) for the model. 
+
+## eztune
+
+The eztune function is the primary function in the EZtune package. The only required arguments are the predictors and the response variable. The function is built on existing R packages that are well maintained and well programmed to ensure that eztune performance is reliable. SVM models are computed using the e1071 package (Meyer et al. 2020), ENs with the glmnet package (Friedman et al. 2010), GBMs with the gbm package (Greenwell and Boehmke 2020), and adaboost with the ada package (Culp et al. 2016). The models produced by eztune are objects from each of these packages so all of the peripheral functions for these packages can be used on models returned by eztune. A summary of each of these packages and why they were chosen follows. 
+
+###  Support vector machines using the e1071 package
+The e1071 package was written by and is maintained by David Meyer. The package was built using the LIBSVM platform, which is written in C++ and is considered one of the best open source libraries for SVMs. e1071 has been around for many years and has continuously been updated during that time frame. It has all of the features needed to perform the tasks needed by eztune and includes other features that allow expansion of eztune in future versions, such as selection of kernels other than the radial kernel and multi-class modeling. 
+
+### Elastic net using the glmnet package
+The glmnet package was written by Jerome Friedman, Trevor Hastie, Rob Tibshirani, Balasubramanian Narasimhan,
+Kenneth Tay and Noah Simon, with contribution from Junyang Qian and is maintained by Trevor Hastie. The package is written using a Fortran subroutines and implements other methods to optimize speed. It uses cyclical coordinate descent to optimize the objective function. glmnet was selected because it is fast, well maintained, and is the most widely used R package for elastic net. 
+
+### Gradient boosting machines using the gbm package 
+The gbm package was written by Greg Ridgeway and has been maintained and updated for many years. It performs GBM by using the framework of an adaboost model with an exponential loss function, but uses Friedman's gradient descent algorithm to optimize the trees rather than the algorithm originally proposed in adaboost. This package was selected because it had all of the features needed for eztune and included the ability to compute a multi-class model for future EZtune versions. 
+
+###  Adaboost implementation with the ada package 
+In contrast to SVMs, EN, and GBMs, there are several standard packages in R that can be used to fit adaboost models. The most established and well known package is ada. Other packages that are often used are fastAdaboost and adabag. fastAdaboost is a new package with a fast implementation of adaboost that is quickly gaining popularity. However, it is still being developed and does not have all of the functionality needed for eztune. It may be considered as a platform for later versions of eztune as fastAdaboost gains more functionality because adaboost is currently the slowest model to tune. The package adabag provides an implementation of adaboost that allows for bagging to be incorporated. This feature is useful, but it does not allow for independent tuning of shrinkage or tree depth. Because these parameters are important tuning parameters, adabag was not used. The ada package has been maintained and updated consistently for many years and has the capability to tune the number of trees, tree depth, and shrinkage independently. Thus, ada was chosen as the primary adaboost package for eztune. 
+
+### Implementation of eztune
+The eztune function was designed to be easy to use. The user only needs to specify the data for the model, but the arguments can be changed for user flexibility. The default settings were chosen to provide fast implementation of the function with good error rates. The syntax is: 
+
+```{r, eval = FALSE}
+eztune(x, y, method = "svm", optimizer = "hjn", fast = TRUE, cross = NULL, loss = "default")
+
+```
+The arguments are: 
+
+* x: Matrix or data frame of dependent variables.
+* y: Vector of responses. It must be numeric for regression models, but it can be numeric or character for classification models.
+* method: "svm" for SVMs, "en" for EN, "ada" for adaboost, and "gbm" for GBMs.
+* optimizer:  "hjn" for Hooke-Jeeves algorithm or "ga" for genetic algorithm.
+* fast: Indicates if the function should use a subset of the observations when optimizing to speed up calculation time. Options include TRUE, a number between 0 and 1, and a positive integer. A value of TRUE will use the smaller of 50% of the data or 200 observations for model fitting. A number between 0 and 1 specifies the proportion of data that will be used to fit the model. A positive integer specifies the number of observations that will be used to fit the model. A model is computed using a random selection of data and the remaining data are used to validate model performance. 
+* cross: If an integer k > 1 is specified, k-fold cross validation is used to fit the model. This parameter is ignored unless fast = FALSE.
+* loss: Defines the loss function used to optimize the model. Options for classification models are "class" for optimization on classification error and "auc" for optimization on AUC. Regression models can be optimized using "mse" for MSE and "mae" for MAE. If the option "default" is selected, classification models will use a loss of classification error and regression models will use MSE.
+
+The function determines if a response is binary or continuous and then performs the appropriate optimization search based on the function arguments. Testing showed that the SVM and EN models are faster to tune than GBMs and adaboost, with adaboost being substantially slower than any of the other models. Tuning is also very slow as datasets get large. The mullein and lichen datasets included this package tune very slowly because of their size. Testing the package on these datasets indicated that the fast option should be set as the default. If a user wants a more accurate model and is willing to wait for it, they can select cross validation or fit with a larger subset of the data.  
+
+The Hooke-Jeeves optimization algorithm was chosen as the default optimization tool because it is fast and it outperformed all of the other algorithms tested. It did not always produce the best model out of the algorithms, but it was the only algorithm that was always among the best performers. The only other algorithm that consistently produced models with error measures as low, or lower, than those found by the Hooke-Jeeves algorithm were those found by the genetic algorithm. The genetic algorithm was able to find a better model than Hooke-Jeeves in some situations, so it is included in the package. However, computation time for the genetic algorithm is very slow, particularly for large datasets. If a user is in need of a more accurate model and can wait for a longer computation time, the genetic algorithm is worth trying. However, eztune will typically produce a very good model using the Hooke-Jeeves option with a much faster computation time. The function hjn from the optimx package (Nash and Varadhan 2011) is used to implement the Hooke-Jeeves algorithm. The package GA (Scrucca 2013) is used for genetic algorithm optimization in eztune. 
+
+The fast options were chosen to allow the user to adjust computation time for different dataset sizes. The default setting uses 50\% of the data for datasets with less than 400 observations. If the data have more than 400 observations, 200 observations are chosen at random as training data and the remaining data are used for model verification. This options allows for very large datasets to be tuned quickly while ensuring there is a sufficient amount of verification data for smaller datasets. However, if the dataset is very large, 200 datapoints will not be enough to tune a good model. The user can change these setting to meet the needs of their project and accommodate their dataset. For example, 200 observations is not enough to tune a model for a dataset as large as the mullein dataset. The user can increase that number of observations used to train the model using the fast argument. Simulations have shown that 50% of the data for larger datasets tends to produce a good model.
+
+The function returns a model and numerical measures that are associated with the model. The model that is returned is an object from the package used to create the model. The SVM model is of class svm, the EN model is of class glmnet, the GBM model is of class gbm.object, and the adaboost model is of class ada. These models can be used with any of the features and functions available for those objects. The accuracy and MSE is returned as well as the final tuning parameters. The names of the parameters match the names from the function used to generate them. For example, the number of trees used in gbm is called n.trees while the same parameter is called iter for adaboost. This may seem confusing, but it was anticipated that users may want to use the functionality of the e1071, glmnet, gbm, and ada packages and naming the parameters to match those packages will make moving from EZtune to the other packages easier. If the fast option is used, eztune will return the number of observations used to train the dataset. If cross validation is used, the function will return the number of folds used for cross validation. 
+
+
+## eztune_cv
+
+Because eztune has many options for model optimization, a second function is included to assess model performance using cross validation. It is known that model accuracy measures based on resubstitution are overly optimistic. That is, when the data that were used to create the model are used to verify the model, model performance will typically look much better than it actually is. Fast options in eztune use data splitting so that the models are optimized using verification data rather than training data. Because the training dataset may be a small fraction of the original dataset the resulting model may not be as accurate as desired. 
+
+The function eztune_cv was developed to easily verify a model computed by eztune using cross validation so that a better estimate of model accuracy can be quickly obtained. The predictors and response are inputs into the function along with the object obtained from eztune. The eztune_cv function returns a number that represents the cross validated accuracy and AUC for classification models or MSE and and MAE for regression models. Function syntax is:
+
+```{r, eval = FALSE}
+eztune_cv(x, y, model, cross = 10)
+
+```
+
+Arguments:
+
+* x: Matrix or data frame of dependent variables.
+* y: Numeric vector of responses.
+* model: Object generated with the function eztune.
+* cross: The number of folds for n-fold cross validation. 
+
+The function returns the cross-validated classification accuracy and AUC for the classification models and the cross-validated MSE and MAE for the regression models.  
+
+<br/><br/>
+
+# Datasets
+
+The datasets included in EZtune are the mullein, mullein test, lichen, and lichen test datasets from the article *Random Forests for Classification in Ecology* (Cutler et al. 2007). Both datasets are large for automatic tuning and were used as part of package development to test performance and computation speed for large datasets. Datasets can be accessed using the following commands: 
+
+```{r, eval = FALSE}
+data(lichen)
+data(lichenTest)
+data(mullein)
+data(mulleinTest)
+
+```
+
+
+## Lichen Data
+The lichen data consist of 840 observations and 40 variables. One variable is a location identifier, 7 (coded as 0 and 1) identify the presence or absence of a type of lichen species, and 32 are characteristics of the survey site where the data were collected. Data were collected between 1993 and 1999 as part of the Lichen Air Quality surveys on public lands in Oregon and southern Washington. Observations were obtained from 1-acre (0.4 ha) plots at Current Vegetation Survey (CVS) sites. Indicator variables denote the presences and absences of seven lichen species. Data for each sampled plot include the topographic variables elevation, aspect, and slope; bioclimatic predictors including maximum, minimum, daily, and average temperatures, relative humidity precipitation, evapotranspiration, and vapor pressure; and vegetation variables including the average age of the dominant conifer and percent conifer cover. 
+
+Twelve monthly values were recorded for each of the bioclimatic predictors in the original dataset. Principal components analyses suggested that for each of these predictors two principal components explained the vast majority (95.0\%-99.5\%) of the total variability. Based on these analyses, indices were created for each set of bioclimatic predictors. These variables were averaged into yearly measurements. Variables within the same season were also combined and the difference between summer and winter averages were recorded to provide summer to winter contrasts. The averages and differences are included in the data in EZtune. 
+
+## Lichen Test Data
+The lichen test data consist of 300 observations and 40 variables. Data were collected from half-acre plots at CVS sites in the same geographical region and contain many of the same variables, including presences and absences for the seven lichen species. The 40 variables are the same as those for the lichen data and it is a good test dataset for predictive methods applied to the Lichen Air Quality data.  
+
+## Mullein Data
+The mullein dataset consists of 12,094 observations and 32 variables. It contains information about the presence and absence of common mullein (*Verbascum thapsus*) at Lava Beds National Monument. The park was digitally divided into 30m $\times$ 30m pixels. Park personnel provided data on 6,047 sites at which mullein was detected and treated between 2000 and 2005, and these data were augmented by 6,047 randomly selected pseudo-absences. Measurements on elevation, aspect, slope, proximity to roads and trails, and interpolated bioclimatic variables such as minimum, maximum, and average temperature, precipitation, relative humidity, and evapotranspiration were recorded for each 30m $\times$ 30m site. 
+
+Twelve monthly values were recorded for each of the bioclimatic predictors in the original dataset. Principal components analyses suggested that for each of these predictors two principal components explained the vast majority (95.0\%-99.5\%) of the total variability. Based on these analyses, indices were created for each set of bioclimatic predictors). These variables were averaged into yearly measurements. Variables within the same season were also combined and the difference between summer and winter averages were recorded to provide summer to winter contrasts. The averages and differences are included in the data in EZtune. 
+
+## Mullein Test Data
+
+The mullein test data consists of 1512 observations and 32 variables. One variable identifies the presence or absence of mullein in a 30m $\times$ 30m site and 31 variables are characteristics of the site where the data were collected. The data were collected in Lava Beds National Monument in 2006 that can be used to verify evaluate predictive statistical procedures applied to the mullein dataset.
+
+<br/><br/>
+
+# Examples
+
+The following examples demonstrate the functionality of EZtune.
+
+
+## Examples with binary classifier as a response
+
+The following examples use the Ionosphere dataset from the mlbench package to demonstrate the package. The second variable is excluded because it only takes on a single value. Note that the user does not need to specify the type of the response variable. EZtune will automatically choose the binary response options if the response variable has only two unique values. 
+
+```{r}
+library(mlbench)
+data(Ionosphere)
+
+y <- Ionosphere[, 35]
+x <- Ionosphere[, -c(2, 35)]
+dim(x)
+
+```
+ 
+This example shows the default options for eztune. It will fit an SVM using 50% of the data and the Hooke-Jeeves algorithm. The eztune_cv function returns the cross validated accuracy and AUC of the model using 10-fold cross validation. Because the fast argument was used, the *n* value that is returned indicates the number of observations that were used to train the model. The *loss* value is the best classification accuracy obtained by the optimization algorithm. 
+
+```{r}
+ion_default <- eztune(x, y)
+ion_default$n
+ion_default$loss
+eztune_cv(x, y, ion_default)
+```
+
+
+This next example tunes an SVM with a Hooke-Jeeves optimization algorithm that is optimized using the AUC obtained from 3-fold cross validation. Note that eztune will only optimize on a cross validated AUC of fast=FALSE. The function only returns the nfold object if it cross validation is used. 
+
+```{r}
+ion_svm <- eztune(x, y, fast = FALSE, cross = 3, loss = "auc")
+ion_svm$nfold
+ion_svm$loss
+eztune_cv(x, y, ion_svm)
+
+```
+
+
+The following code tunes a GBM using a genetic algorithm and using only 50 randomly selected observations to train the model. 
+
+```{r}
+ion_gbm <- eztune(x, y, method = "gbm", optimizer = "ga", fast = 50)
+ion_gbm$n
+ion_gbm$loss
+eztune_cv(x, y, ion_gbm)
+
+```
+
+
+## Examples with a continuous response
+
+The following examples use the BostonHousing2 dataset from the mlbench package to demonstrate the package. The variable medv is excluded because it is an incorrect version of the response. Note that the user does not need to specify the type of the response variable. EZtune will automatically choose the continuous response options if the response variable has more than two unique values. 
+
+
+```{r}
+data(BostonHousing2)
+
+x <- BostonHousing2[, c(1:4, 7:19)]
+y <- BostonHousing2[, 6]
+dim(x)
+
+
+```
+
+
+This example shows the default values for eztune with the regression response. It is uses 200 observations to train an SVM because there are more than 400 observations in the BostonHousing2 dataset. The MSE is returned along with the number of observations used to train the model.
+
+
+```{r}
+bh_default <- eztune(x, y)
+bh_default$n
+bh_default$loss
+eztune_cv(x, y, bh_default)
+
+```
+
+
+This example tunes an SVM using a genetic algorithm trained with 200 observations and using MSE as the loss function.
+
+```{r}
+bh_ga <- eztune(x, y, optimizer = "ga")
+bh_ga$n
+bh_ga$loss
+eztune_cv(x, y, bh_ga)
+
+```
+
+This example tunes a GBM using Hooke-Jeeves with a training dataset of 75\% of the data, and MAE as the loss.
+
+```{r}
+bh_gbm <- eztune(x, y, method = "gbm", fast = 0.75, loss = "mae")
+bh_gbm$n
+bh_gbm$loss
+eztune_cv(x, y, bh_gbm)
+
+```
+
+<br/><br/>
+
+# Performance and speed guidelines
+
+Performance and speed were tested on seven datasets with a continuous response and six datasets with a binary classifier as a response. The datasets varied in size. The following guidelines and observations were made during the analysis: 
+
+* The default fast option produces very good results for most datasets. However, larger datasets, such as the mullein dataset, often need more than 200 observations to get a well tuned model. It is recommended to use at least 50% of the data in these situations if the computation time can be spared. 
+* The best results are seen with models optimized using 10-fold cross validation. However, computation time is very slow and may be prohibitive for very large datasets. 
+* The fast options decrease computation time unilaterally and often produce results nearly as good as with 10-fold cross validation. 
+* Tuning using resubstitution is slow and yields poor results. It is recommended to avoid this method. 
+* SVM has the fastest computation time and adaboost has the slowest computation time. 
+* Models computed using small datasets (<75 observations) do not yield good results, particularly for regression models. 
+
+

@@ -45,7 +45,7 @@ for models with a binary response are "class" for classification error
 and "auc" for area under the curve. Options for models with a
 continuous response are "mse" for mean squared error and "mae" for
 mean absolute error. If the option "default" is selected, or no
-loss is specified, the classification error will be used for a binary
+loss is specified, the classification accuracy will be used for a binary
 response model and the MSE will be use for models with a continuous
 model.}
 }

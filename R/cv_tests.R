@@ -181,11 +181,12 @@ svm.bin.cv <- function(x, y, model, cross = 10) {
   for(i in 1:cross) {
     train <- dat[xvs != i, ]
     test <- dat[xvs == i, ]
-    t1 <- rbind(test, train)
+    # t1 <- rbind(test, train)
     svm.t <- e1071::svm(as.factor(y) ~ ., data = train, cost = model$cost,
                         gamma = model$gamma, probability = TRUE)
-    pr <- stats::predict(svm.t, newdata = t1[, -1], probability = TRUE)
-    yval[xvs == i] <- attr(pr, "probabilities")[, 1][1:nrow(test)]
+    pr <- stats::predict(svm.t, newdata = test, probability = TRUE)
+    yval[xvs == i] <- attr(pr, "probabilities")[, colnames(attr(pr, "probabilities")) == "1"]
+    # yval[xvs == i] <- stats::predict(svm.t, newdata = test[, -1])
   }
 
   list(accuracy = loss.bin(pred = yval, true_y = dat$y, loss = "class"),
