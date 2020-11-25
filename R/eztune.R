@@ -76,11 +76,11 @@
 #' eztune(x, y, fast = FALSE, cross = 3)
 #'
 #' # Optimize GBM using training set of 50 observations and Hooke-Jeeves
-#' eztune(x, y, method = "gbm", fast = 50, loss = "auc")
+#' \donttest{eztune(x, y, method = "gbm", fast = 50, loss = "auc")}
 #'
 #' # Optimize SVM with 25% of the observations as a training dataset
 #' # using a genetic algorithm
-#' eztune(x, y, method = "svm", optimizer = "ga", fast = 0.25)
+#' \donttest{eztune(x, y, method = "svm", optimizer = "ga", fast = 0.25)}
 #'
 #' @export
 #'
