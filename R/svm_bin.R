@@ -76,7 +76,7 @@ svm.bin.hjn <- function(x = x, y = y, cross = NULL, fast = FALSE, loss = loss) {
                          gamma = 2^params[2], probability = TRUE))
     if(!is.null(pr)){
       pr1 <- stats::predict(pr, newdata = dat[, -1], probability = TRUE)
-      pred <- attr(pr1, "probabilities")[, colnames(attr(pr, "probabilities")) == "1"]
+      pred <- attr(pr1, "probabilities")[, colnames(attr(pr1, "probabilities")) == "1"]
       l <- 1.0 - loss.bin(pred = pred, true_y = dat$y, loss = loss)
     } else {
       l <- 1
