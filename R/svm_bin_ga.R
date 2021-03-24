@@ -117,7 +117,8 @@ svm.bin.ga <- function(x = x, y = y, cross = NULL, fast = FALSE, loss = loss) {
   results$gamma <- as.numeric(2^ga.obj@solution[1, 2])
   results$loss <- as.numeric(ga.obj@fitnessValue)
   results$model <- e1071::svm(as.factor(y) ~ ., data = dat,
-                              cost = results$cost, gamma = results$gamma)
+                              cost = results$cost, gamma = results$gamma,
+                              probability = TRUE)
 
   results
 }

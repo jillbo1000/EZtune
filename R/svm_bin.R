@@ -119,7 +119,8 @@ svm.bin.hjn <- function(x = x, y = y, cross = NULL, fast = FALSE, loss = loss) {
   results$gamma <- as.numeric(2^hjn.obj$par[2])
   results$loss <- 1.0 - as.numeric(hjn.obj$value)
   results$model <- e1071::svm(as.factor(y) ~ ., data = dat,
-                              cost = results$cost, gamma = results$gamma)
+                              cost = results$cost, gamma = results$gamma,
+                              probability = TRUE)
 
   results
 }

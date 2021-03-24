@@ -46,8 +46,8 @@ en.bin.cv <- function(x, y, model, cross = 10) {
     t1 <- rbind(test.x, train.x)
     en.t <- glmnet::glmnet(train.x, train.y, family = "binomial",
                            alpha = model$alpha, lambda = model$lambda)
-    yval[xvs == i] <- as.numeric(stats::predict(en.t, newx = t1,
-                                                type = "class"))[1:nrow(test.x)]
+    yval[xvs == i] <- stats::predict(en.t, newx = t1,
+                                     type = "response")[1:nrow(test.x)]
   }
 
   list(accuracy = loss.bin(pred = yval, true_y = y, loss = "class"),
@@ -74,8 +74,8 @@ en.reg.cv <- function(x, y, model, cross = 10) {
     t1 <- rbind(test.x, train.x)
     en.t <- glmnet::glmnet(train.x, train.y, family = "gaussian",
                            alpha = model$alpha, lambda = model$lambda)
-    yval[xvs == i] <- as.numeric(stats::predict(en.t, newx = t1,
-                                                type = "response"))[1:nrow(test.x)]
+    yval[xvs == i] <- stats::predict(en.t, newx = t1,
+                                     type = "response")[1:nrow(test.x)]
   }
 
   list(mse = loss.reg(pred = yval, true_y = y, loss = "mse"),

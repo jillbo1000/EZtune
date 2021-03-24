@@ -22,7 +22,7 @@ en.bin.hjn <- function(x = x, y = y, cross = cross, fast = fast, loss =loss) {
     try(pr <- glmnet::glmnet(x, y, family = "binomial",
                        alpha = params[1], lambda = exp(params[2])))
 
-    pred <- as.numeric(stats::predict(pr, newx = x, type = "class"))
+    pred <- stats::predict(pr, newx = x, type = "response")
 
     if(is.null(pr)){
       l <- 1
@@ -49,8 +49,7 @@ en.bin.hjn <- function(x = x, y = y, cross = cross, fast = fast, loss =loss) {
       test.y <- y[xvs == i]
       en.t <- glmnet::glmnet(train.x, train.y, family = "binomial",
                              alpha = alpha, lambda = exp(lambda))
-      yval[xvs == i] <- as.numeric(stats::predict(en.t, newx = test.x,
-                                                  type = "class"))
+      yval[xvs == i] <- stats::predict(en.t, newx = test.x, type = "response")
     }
 
     l <- loss.bin(pred = yval, true_y = y, loss = loss)
@@ -81,7 +80,7 @@ en.bin.hjn <- function(x = x, y = y, cross = cross, fast = fast, loss =loss) {
     test <- dat2[-c(1:n), ]
     en.t <- glmnet::glmnet(train[, -1], train[, 1], family = "binomial",
                            alpha = alpha, lambda = exp(lambda))
-    pred <- as.numeric(stats::predict(en.t, newx = test[, -1], type = "class"))
+    pred <- stats::predict(en.t, newx = test[, -1], type = "response")
 
     l <- loss.bin(pred = pred, true_y = test[, 1], loss = loss)
     l
