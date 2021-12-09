@@ -2,7 +2,7 @@
 title: "EZtune"
 author: "Jill F. Lundell"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: BiocStyle::html_document
 vignette: >
   %\VignetteIndexEntry{EZtune}
   %\VignetteEngine{knitr::rmarkdown}
@@ -31,7 +31,7 @@ The package includes two functions and four datasets. The functions are eztune a
 
 <br/><br/>
 
-# Functions: eztune and eztune_cv
+# Functions: eztune, eztune_cv, predict
 
 The eztune function is used to find an optimal model given the data. eztune_cv provides a cross validated accuracy and area under the ROC curve (AUC), or mean squared error (MSE) and mean absolute error (MAE) for the model. 
 
@@ -97,6 +97,11 @@ Arguments:
 * cross: The number of folds for n-fold cross validation. 
 
 The function returns the cross-validated classification accuracy and AUC for the classification models and the cross-validated MSE and MAE for the regression models.  
+
+
+## predict 
+
+A predict function is included with the EZtune package to provide greater flexibility in using and assessing the models. The function takes an EZtune object created using the function eztune and a matrix or data.frame on which to make predictions. If the response variable is coninuous, predict returns a vector of predicted values. If the response variable is binary, predict returns a data.frame that has the predicted class and the probability of each response type.  
 
 <br/><br/>
 
@@ -230,6 +235,89 @@ bh_gbm$loss
 eztune_cv(x, y, bh_gbm)
 
 ```
+
+## Example with benchmarking on classification model
+
+This example uses the rsample package (Silge et al. 2021) to split the data into test and training datasets. The training data is used to tune a model using eztune and then the model is verified using the test dataset and the predict function. 
+
+This snippet demontrates how to split the Sonar data into training and test dataset. 
+
+```{r}
+library(mlbench)
+library(rsample)
+data(Sonar)
+sonar_split <- initial_split(Sonar, strata = Class)
+sonar_train <- training(sonar_split)
+sonar_test <- testing(sonar_split)
+sonar_folds <- vfold_cv(sonar_train)
+
+```
+
+Then we train an SVM using eztune. The best accuracy obtained from the model is returned so that it can be compared to that of the test dataset. 
+
+```{r}
+model <- eztune(x = subset(sonar_train, select = -Class), 
+                y = sonar_train$Class, method = "svm", optimizer = "hjn", 
+                fast = 0.5)
+
+model$loss
+
+```
+
+Now that we have a model, it can be used with the test dataset to verify the performance of the tuned SVM. Because this is a classification model, the predict function returns a data.frame with two vectors. The package yardstick (Kuhn and Vaughn 2021) is helpful in obtaining the accuracy rate and the AUC. The results demonstrate how important it is to verify your model with a test dataset.   
+
+```{r}
+library(yardstick)
+predictions <- predict(model, sonar_test)
+acc <- accuracy_vec(truth = sonar_test$Class, estimate = predictions[, 1])
+auc <- roc_auc_vec(truth = sonar_test$Class, estimate = predictions[, 2])
+acc
+auc
+
+```
+
+
+## Example with benchmarking on regression model
+
+This next example uses the BostonHousing2 data from the mlbench package to demonstrate how to do benchmarking with rsample and the predict function with a regression model. The syntax is a little different than for the classification model. We start with splitting the BostonHousing2 data into a training and test dataset. 
+
+```{r}
+library(dplyr)
+library(mlbench)
+library(rsample)
+data(BostonHousing2)
+bh <- mutate(BostonHousing2, lcrim = log(crim)) %>%
+  dplyr::select(-town, -medv, -crim)
+bh_split <- initial_split(bh)
+bh_train <- training(bh_split)
+bh_test <- testing(bh_split)
+bh_folds <- vfold_cv(bh_train)
+
+```
+
+We then tune an SVM using eztune and show the best loss so that it can be compared to the RMSE obtained from the test dataset. 
+
+```{r}
+model <- eztune(x = subset(bh_train, select = -cmedv), y = bh_train$cmedv, 
+                method = "svm", optimizer = "hjn", fast = 0.5)
+
+sqrt(model$loss)
+
+```
+
+The predictions for the test dataset are computed using the predict function and then yardstick is used to obtain the RMSE and the MAE. As with the classification model, the test demonstrates how important it is to verify your model with a test dataset. 
+
+```{r}
+predictions <- predict(model, bh_test)
+rmse <- rmse_vec(truth = bh_test$cmedv, estimate = predictions)
+mae <- mae_vec(truth = bh_test$cmedv, estimate = predictions)
+rmse
+mae
+
+```
+
+
+
 
 <br/><br/>
 

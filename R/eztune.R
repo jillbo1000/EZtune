@@ -30,23 +30,22 @@
 #' or no loss is specified, the classification accuracy will be used for a binary
 #' response model and the MSE will be use for models with a continuous
 #' model.
-#' @param cross If an integer k > 1 is specified, k-fold cross-validation
+#' @param cross If an integer k \> 1 is specified, k-fold cross-validation
 #'  is used to fit the model. This method is very slow for large datasets.
 #'  This parameter is ignored unless \code{fast = FALSE}.
 #' @return Function returns an object of class "\code{eztune}" which contains
 #' a summary of the tuning parameters for the best model, the best loss
 #' measure achieved (classification accuracy, AUC, MSE, or MAE), and the best
 #' model.
-#'
 #' \item{loss}{Best loss measure obtained by the optimizer. This is
 #' the measure specified by the user that the optimizer uses to choose a
 #' "best" model (classification accuracy, AUC, MSE, or MAE). Note that
 #' if the default option is used it is the classification
 #' accuracy for a binary response and the MSE for a continuous response.}
 #' \item{model}{Best model found by the optimizer. Adaboost model
-#'  comes from package \code{ada} (\code{ada" object), elastic net model
+#'  comes from package \code{ada} (\code{ada} object), elastic net model
 #'  comes from package \code{glmnet} (\code{glmnet} object), gbm model
-#'  comes from package \code{gbm} (\code{gbm.object" object), svm (\code{svm}
+#'  comes from package \code{gbm} (\code{gbm.object} object), svm (\code{svm}
 #'  object) model comes from package \code{e1071}.}
 #' \item{n}{Number of observations used in model training when
 #' fast option is used}

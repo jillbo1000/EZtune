@@ -4,12 +4,14 @@
 \alias{predict.eztune}
 \title{Prediction function for EZtune}
 \usage{
-\method{predict}{eztune}(model, x)
+\method{predict}{eztune}(object, newdata, ...)
 }
 \arguments{
-\item{model}{An object of class "\code{eztune}".}
+\item{object}{An object of class "\code{eztune}".}
 
-\item{x}{Matrix or data frame containing the test or validation dataset.}
+\item{newdata}{Matrix or data frame containing the test or validation dataset.}
+
+\item{...}{Additional parameters to pass to predict.}
 }
 \value{
 Function returns a vector of predictions if the response is
@@ -20,7 +22,7 @@ response and the probabilities of each response type is returned.
 \code{predict.eztune} Computes predictions for a validation dataset.
 }
 \examples{
-library(eztune)
+library(EZtune)
 data(lichen)
 data(lichenTest)
 
@@ -33,7 +35,7 @@ mod1 <- eztune(x, y)
 # Obtain predictions using the lichenTest dataset and compute classification
 # error
 pred <- predict(mod1, lichenTest)
-mean(test$predictions == as.factor(lichenTest$LobaOreg))
+mean(pred$predictions == as.factor(lichenTest$LobaOreg))
 
 # Optimize an SVM regression model using the default settings
 library(mlbench)
@@ -49,5 +51,4 @@ mod2 <- eztune(x, y)
 # Obtain predictions from the original data and compute the rmse
 pred <- predict(mod2, x)
 rmse_vec(pred, y)
-
 }

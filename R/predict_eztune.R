@@ -1,14 +1,15 @@
 #' Prediction function for EZtune
 #'
 #' \code{predict.eztune} Computes predictions for a validation dataset.
-#' @param model An object of class "\code{eztune}".
-#' @param x Matrix or data frame containing the test or validation dataset.
+#' @param object An object of class "\code{eztune}".
+#' @param newdata Matrix or data frame containing the test or validation dataset.
+#' @param ... Additional parameters to pass to predict.
 #' @return Function returns a vector of predictions if the response is
 #' continuous. If the response is binary, a \code{data.frame} with the predicted
 #' response and the probabilities of each response type is returned.
 #'
 #' @examples
-#' library(eztune)
+#' library(EZtune)
 #' data(lichen)
 #' data(lichenTest)
 #'
@@ -21,7 +22,7 @@
 #' # Obtain predictions using the lichenTest dataset and compute classification
 #' # error
 #' pred <- predict(mod1, lichenTest)
-#' mean(test$predictions == as.factor(lichenTest$LobaOreg))
+#' mean(pred$predictions == as.factor(lichenTest$LobaOreg))
 #'
 #' # Optimize an SVM regression model using the default settings
 #' library(mlbench)
@@ -37,37 +38,38 @@
 #' # Obtain predictions from the original data and compute the rmse
 #' pred <- predict(mod2, x)
 #' rmse_vec(pred, y)
-#'
+#' @rdname predict.eztune
 #' @export
 #'
-predict.eztune <- function(model, x) {
+predict.eztune <- function(object, newdata, ...) {
 
-  if(!is.data.frame(x) & !is.matrix(x)) stop("x must be a data.frame or matrix")
+  x <- newdata
+  if(!is.data.frame(x) & !is.matrix(x)) stop("newdata must be a data.frame or matrix")
   type <- "reg"
   lev <- NULL
-  try(lev <- model$levels)
-  nms <- model$variables
-  model <- model$model
+  try(lev <- object$levels)
+  nms <- object$variables
+  model <- object$model
 
   if("svm" %in% class(model)) {
     if(!is.null(lev)) {
-      pr <- stats::predict(model, newdata = x, probability = TRUE)
+      pr <- stats::predict(model, newdata = x, probability = TRUE, ...)
       pred <- data.frame(predictions = round(attr(pr, "probabilities")[, colnames(attr(pr, "probabilities")) == "1"]),
                          prob1 = attr(pr, "probabilities")[, colnames(attr(pr, "probabilities")) == "0"],
                          prob2 = attr(pr, "probabilities")[, colnames(attr(pr, "probabilities")) == "1"])
       type <- "bin"
     } else {
-      pred <- stats::predict(model, newdata = x)
+      pred <- stats::predict(model, newdata = x, ...)
     }
   } else if("gbm" %in% class(model)) {
     if(!is.null(lev)) {
       pr <- gbm::predict.gbm(model, newdata = x, type="response",
-                             n.trees = model$n.trees)
+                             n.trees = model$n.trees, ...)
       pred <- data.frame(predictions = round(pr), prob1 = 1 - pr, prob2 = pr)
       type <- "bin"
     } else {
       pred <- gbm::predict.gbm(model, newdata = x, type="response",
-                               n.trees = round(model$n.trees))
+                               n.trees = round(model$n.trees), ...)
     }
   } else if("glmnet" %in% class(model)) {
     x <- x[, colnames(x) %in% nms]
@@ -77,12 +79,12 @@ predict.eztune <- function(model, x) {
       pred <- data.frame(predictions = round(pr), prob1 = 1 - pr, prob2 = pr)
       type <- "bin"
     } else {
-      pred <- stats::predict(model, newx = x, type = "response")[, 1]
+      pred <- stats::predict(model, newx = x, type = "response", ...)[, 1]
     }
   } else if(class(model) == "ada") {
     pr <- stats::predict(model, newdata = x, type = "prob")
     pred <- data.frame(predictions = round(pr[, 2]), prob1 = pr[, 1],
-                       prob2 = pr[, 2])
+                       prob2 = pr[, 2], ...)
     type <- "bin"
   }
 
